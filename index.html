@@ -9,12 +9,19 @@
   <ul id="meetingList">Loading...</ul>
 
   <script>
-    fetch('https://webapi.legistar.com/v1/sanmateo/events')
-      .then(response => response.json())
+    const proxyUrl = 'https://api.allorigins.win/get?url=';
+    const targetUrl = encodeURIComponent('https://webapi.legistar.com/v1/sanmateo/events');
+
+    fetch(proxyUrl + targetUrl)
+      .then(response => {
+        if (response.ok) return response.json();
+        throw new Error('Network response was not ok.');
+      })
       .then(data => {
+        const meetings = JSON.parse(data.contents);
         const list = document.getElementById('meetingList');
-        list.innerHTML = ""; // Clear loading text
-        data.forEach(event => {
+        list.innerHTML = "";
+        meetings.forEach(event => {
           const item = document.createElement('li');
           item.innerHTML = `
             <strong>${event.EventDate.split("T")[0]}</strong> – ${event.EventBodyName}<br>
@@ -30,4 +37,3 @@
   </script>
 </body>
 </html>
-
