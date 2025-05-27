@@ -1,1 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Board of Supervisors Meetings</title>
+  <meta charset="UTF-8">
+</head>
+<body>
+  <h1>San Mateo County Board of Supervisors Meetings</h1>
+  <ul id="meetingList">Loading...</ul>
+
+  <script>
+    fetch('https://webapi.legistar.com/v1/sanmateo/events')
+      .then(response => response.json())
+      .then(data => {
+        const list = document.getElementById('meetingList');
+        list.innerHTML = ""; // Clear loading text
+        data.forEach(event => {
+          const item = document.createElement('li');
+          item.innerHTML = `
+            <strong>${event.EventDate.split("T")[0]}</strong> – ${event.EventBodyName}<br>
+            ${event.AgendaStatusName === "Published" && event.AgendaFile ? `<a href="${event.AgendaFile}" target="_blank">Agenda PDF</a>` : 'Agenda not yet published'}
+          `;
+          list.appendChild(item);
+        });
+      })
+      .catch(error => {
+        document.getElementById('meetingList').innerText = 'Error loading meetings.';
+        console.error('Error fetching meetings:', error);
+      });
+  </script>
+</body>
+</html>
 
