@@ -1,43 +1,100 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Board of Supervisors Agendas – San Mateo County</title>
+  <title>Board of Supervisors Meetings</title>
   <meta charset="UTF-8">
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 800px; margin: auto; }
+    ul { list-style: none; padding-left: 0; }
+    li { margin-bottom: 10px; }
+    button { margin-top: 5px; }
+    .section { margin-bottom: 30px; }
+  </style>
 </head>
 <body>
-  <h1>2025 Board of Supervisors Agendas</h1>
-  <ul id="agendaList">Loading...</ul>
+
+  <h1>San Mateo County Board of Supervisors</h1>
+
+  <div class="section">
+    <h2>1. Meetings</h2>
+    <ul id="meetingsList">Loading...</ul>
+  </div>
+
+  <div class="section">
+    <h2>2. Agenda Items</h2>
+    <ul id="agendaList"></ul>
+  </div>
+
+  <div class="section">
+    <h2>3. Actions</h2>
+    <ul id="actionList"></ul>
+  </div>
 
   <script>
-    const proxy = 'https://api.allorigins.win/get?url=';
-    const encodedUrl = encodeURIComponent(
-      "https://webapi.legistar.com/v1/sanmateocounty/Matters/?$filter=MatterAgendaDate%20ge%20datetime'2025-01-01'%20and%20MatterAgendaDate%20lt%20datetime'2025-12-31'"
-    );
+    const proxy = url => "https://corsproxy.io/?" + encodeURIComponent(url);
 
-    fetch(proxy + encodedUrl)
-      .then(response => {
-        if (response.ok) return response.json();
-        throw new Error('Network response was not ok.');
-      })
-      .then(data => {
-        const agendas = JSON.parse(data.contents).value; // ✅ FIXED HERE
-        const list = document.getElementById('agendaList');
-        list.innerHTML = "";
+    const meetingsList = document.getElementById('meetingsList');
+    const agendaList = document.getElementById('agendaList');
+    const actionList = document.getElementById('actionList');
 
-        agendas.forEach(matter => {
-          const item = document.createElement('li');
-          item.innerHTML = `
-            <strong>${matter.MatterAgendaDate?.split("T")[0]}</strong>: 
-            ${matter.MatterTitle}<br>
-            ${matter.MatterHyperlink ? `<a href="${matter.MatterHyperlink}" target="_blank">View Item</a>` : ''}
-          `;
-          list.appendChild(item);
-        });
-      })
-      .catch(error => {
-        document.getElementById('agendaList').innerText = 'Error loading agendas.';
-        console.error('Error fetching agendas:', error);
+    // STEP 1: Load Meetings
+    fetch(proxy("https://webapi.legistar.com/v1/sanmateocounty/Events?$orderby=EventDate desc"))
+      .then(r => r.json())
+      .then(events => {
+        meetingsList.innerHTML = '';
+        events
+          .filter(e => e.EventBodyName === "Board of Supervisors")
+          .slice(0, 10)
+          .forEach(event => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <strong>${event.EventDate.split('T')[0]}</strong>: ${event.EventLocation}
+              <br><button onclick="loadAgendaItems(${event.EventId})">View Agenda</button>
+            `;
+            meetingsList.appendChild(li);
+          });
       });
+
+    // STEP 2: Load Agenda Items for a Meeting
+    function loadAgendaItems(eventId) {
+      agendaList.innerHTML = 'Loading...';
+      actionList.innerHTML = '';
+      fetch(proxy(`https://webapi.legistar.com/v1/sanmateocounty/EventItems/${eventId}`))
+        .then(r => r.json())
+        .then(items => {
+          agendaList.innerHTML = '';
+          items.forEach(item => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              <strong>${item.EventItemAgendaNumber || 'Item'}:</strong> ${item.EventItemTitle}
+              <br><button onclick="loadActions(${item.MatterId})">View Actions</button>
+            `;
+            agendaList.appendChild(li);
+          });
+        });
+    }
+
+    // STEP 3: Load Actions for a Matter
+    function loadActions(matterId) {
+      actionList.innerHTML = 'Loading...';
+      fetch(proxy(`https://webapi.legistar.com/v1/sanmateocounty/Actions?$filter=MatterId eq ${matterId}`))
+        .then(r => r.json())
+        .then(actions => {
+          actionList.innerHTML = '';
+          if (actions.length === 0) {
+            actionList.innerHTML = '<li>No actions recorded.</li>';
+            return;
+          }
+          actions.forEach(action => {
+            const li = document.createElement('li');
+            li.innerHTML = `
+              ${action.ActionDate?.split('T')[0]} – ${action.ActionName} 
+              ${action.ActionText ? `– ${action.ActionText}` : ''}
+            `;
+            actionList.appendChild(li);
+          });
+        });
+    }
   </script>
 </body>
 </html>
