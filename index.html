@@ -20,7 +20,7 @@
         throw new Error('Network response was not ok.');
       })
       .then(data => {
-        const agendas = JSON.parse(data.contents);
+        const agendas = JSON.parse(data.contents).value; // ✅ FIXED HERE
         const list = document.getElementById('agendaList');
         list.innerHTML = "";
 
@@ -29,7 +29,7 @@
           item.innerHTML = `
             <strong>${matter.MatterAgendaDate?.split("T")[0]}</strong>: 
             ${matter.MatterTitle}<br>
-            ${matter.MatterFile ? `<a href="${matter.MatterHyperlink}" target="_blank">View Item</a>` : ''}
+            ${matter.MatterHyperlink ? `<a href="${matter.MatterHyperlink}" target="_blank">View Item</a>` : ''}
           `;
           list.appendChild(item);
         });
