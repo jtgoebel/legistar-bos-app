@@ -1,38 +1,42 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Board of Supervisors Meetings</title>
+  <title>Board of Supervisors Agendas – San Mateo County</title>
   <meta charset="UTF-8">
 </head>
 <body>
-  <h1>San Mateo County Board of Supervisors Meetings</h1>
-  <ul id="meetingList">Loading...</ul>
+  <h1>2025 Board of Supervisors Agendas</h1>
+  <ul id="agendaList">Loading...</ul>
 
   <script>
-    const proxyUrl = 'https://api.allorigins.win/get?url=';
-    const targetUrl = encodeURIComponent('https://webapi.legistar.com/v1/sanmateo/events');
+    const proxy = 'https://api.allorigins.win/get?url=';
+    const encodedUrl = encodeURIComponent(
+      "https://webapi.legistar.com/v1/sanmateocounty/Matters/?$filter=MatterAgendaDate%20ge%20datetime'2025-01-01'%20and%20MatterAgendaDate%20lt%20datetime'2025-12-31'"
+    );
 
-    fetch(proxyUrl + targetUrl)
+    fetch(proxy + encodedUrl)
       .then(response => {
         if (response.ok) return response.json();
         throw new Error('Network response was not ok.');
       })
       .then(data => {
-        const meetings = JSON.parse(data.contents);
-        const list = document.getElementById('meetingList');
+        const agendas = JSON.parse(data.contents);
+        const list = document.getElementById('agendaList');
         list.innerHTML = "";
-        meetings.forEach(event => {
+
+        agendas.forEach(matter => {
           const item = document.createElement('li');
           item.innerHTML = `
-            <strong>${event.EventDate.split("T")[0]}</strong> – ${event.EventBodyName}<br>
-            ${event.AgendaStatusName === "Published" && event.AgendaFile ? `<a href="${event.AgendaFile}" target="_blank">Agenda PDF</a>` : 'Agenda not yet published'}
+            <strong>${matter.MatterAgendaDate?.split("T")[0]}</strong>: 
+            ${matter.MatterTitle}<br>
+            ${matter.MatterFile ? `<a href="${matter.MatterHyperlink}" target="_blank">View Item</a>` : ''}
           `;
           list.appendChild(item);
         });
       })
       .catch(error => {
-        document.getElementById('meetingList').innerText = 'Error loading meetings.';
-        console.error('Error fetching meetings:', error);
+        document.getElementById('agendaList').innerText = 'Error loading agendas.';
+        console.error('Error fetching agendas:', error);
       });
   </script>
 </body>
